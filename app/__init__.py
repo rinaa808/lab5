@@ -1,21 +1,17 @@
 from flask import Flask
 from flask_migrate import Migrate
-from db import db
 from config import Config
-from models import Employee, Position, Division, Job # noqa
+from app.db import db
+from app.models import Employee, Position, Division, Job # noqa
+from app.views import bp
 
 app = Flask(__name__)
 app.debug = True
 app.config.from_object(Config)
 
+# extensions here
 db.init_app(app)
 migrate = Migrate(app, db)
 
-
-@app.route("/")
-def index():
-    ...
-
-
-if __name__ == '__main__':
-    app.run()
+# register blueprint here
+app.register_blueprint(bp)

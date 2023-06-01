@@ -7,7 +7,7 @@ from flask import abort
 bp = Blueprint('bp', __name__)
 
 
-@bp.route('/employee/add', methods=['POST'])
+@bp.route('/employee/add', methods=['GET'])
 def add_employee():
     employee_data = {
         "name": request.args.get('name'),

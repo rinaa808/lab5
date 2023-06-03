@@ -7,7 +7,7 @@ from flask import abort
 bp = Blueprint('bp', __name__)
 
 
-@bp.route('/employee/add', methods=['GET'])
+@bp.route('/employee/add', methods=['POST'])
 def add_employee():
     employee_data = {
         "name": request.args.get('name'),
@@ -20,44 +20,48 @@ def add_employee():
         new_employee = Employee(**employee_data)
         db.session.add(new_employee)
         db.session.commit()
+        return new_employee
     except Exception as ex:
-        print(type(ex))
+        print("error! " + str(ex))
 
 
 @bp.route('/employee/get', methods=['GET'])
 def get_employee():
     employee = Employee.query.get(request.args.get('id'))
-    print("Name of employee: ", employee.name,
-          " Surname: ", employee.surname,
-          " Patronymic: ", employee.patronymic,
-          " Address: ", employee.address,
-          " Date of birth: ", employee.date_of_birth)
 
     if not employee:
         abort(404)
+    else:
+        print("Name of employee: ", employee.name,
+              " Surname: ", employee.surname,
+              " Patronymic: ", employee.patronymic,
+              " Address: ", employee.address,
+              " Date of birth: ", employee.date_of_birth)
     return dict(employee)
 
 
 @bp.route('/employee/delete', methods=['DELETE'])
 def delete_employee():
     employee = Employee.query.get(request.args.get('id'))
-    db.session.delete(employee)
-    db.session.commit()
 
     if not employee:
         abort(404)
-    return dict(employee)
+    else:
+        db.session.delete(employee)
+        db.session.commit()
+    return 'deletion successful'
 
 
 @bp.route('/employee/edit', methods=['PUT'])
 def edit_employee():
     employee = Employee.query.get(request.args.get('id'))
-    employee.surname = request.args.get('surname')
-    db.session.add(employee)
-    db.session.commit()
 
     if not employee:
         abort(404)
+    else:
+        employee.surname = request.args.get('surname')
+        db.session.add(employee)
+        db.session.commit()
     return dict(employee)
 
 
@@ -71,29 +75,32 @@ def add_position():
         new_position = Position(**position_data)
         db.session.add(new_position)
         db.session.commit()
+        return new_position
     except Exception as ex:
-        print(type(ex))
+        print("Error!" + str(ex))
 
 
 @bp.route('/position/get', methods=['GET'])
 def get_position():
     position = Position.query.get(request.args.get('id'))
-    print("Title of position: ", position.title)
 
     if not position:
         abort(404)
+    else:
+        print("Title of position: ", position.title)
     return dict(position)
 
 
 @bp.route('/position/delete', methods=['DELETE'])
 def delete_position():
     position = Position.query.get(request.args.get('id'))
-    db.session.delete(position)
-    db.session.commit()
 
     if not position:
         abort(404)
-    return dict(position)
+    else:
+        db.session.delete(position)
+        db.session.commit()
+    return 'deletion successful'
 
 
 @bp.route('/division/add', methods=['POST'])
@@ -106,29 +113,32 @@ def add_division():
         new_division = Division(**division_data)
         db.session.add(new_division)
         db.session.commit()
+        return new_division
     except Exception as ex:
-        print(type(ex))
+        print("Error!" + str(ex))
 
 
 @bp.route('/division/get', methods=['GET'])
 def get_division():
     division = Division.query.get(request.args.get('id'))
-    print("Title of division: ", division.title)
 
     if not division:
         abort(404)
+    else:
+        print("Title of division: ", division.title)
     return dict(division)
 
 
 @bp.route('/division/delete', methods=['DELETE'])
 def delete_division():
     division = Division.query.get(request.args.get('id'))
-    db.session.delete(division)
-    db.session.commit()
 
     if not division:
         abort(404)
-    return dict(division)
+    else:
+        db.session.delete(division)
+        db.session.commit()
+    return 'deletion successful'
 
 
 @bp.route('/employment', methods=['POST'])
@@ -144,33 +154,39 @@ def employment():
         "date_of_employment": request.args.get('date_of_employment')
     }
 
-    new_employment = Job(**employment_data)
-    db.session.add(new_employment)
-    db.session.commit()
-
     if not employee or not position or not division:
         abort(404)
-    return dict(division)
+    else:
+        new_employment = Job(**employment_data)
+        db.session.add(new_employment)
+        db.session.commit()
+        return new_employment
 
 
 @bp.route('/dismissal', methods=['PUT'])
 def dismissal():
     try:
-        job = Job.query.filter(Job.staffer_id == 1).one()
+        job = Job.query.filter(Job.staffer_id == request.args.get('id')).one()
         job.date_of_dismissal = request.args.get('date_of_dismissal')
         db.session.add(job)
         db.session.commit()
+        return 'employee dismissed'
     except Exception as ex:
-        print(type(ex))
-
-    return 'hi'
+        print("Error!" + str(ex))
 
 
 @bp.route('/employees', methods=['GET'])
 def get_list_of_employees():
-    employees = Employee.query.join(Job).filter(Job.date_of_dismissal == "None").order_by(Job.date_of_employment).all()
-    print("List of employees: ", employees)
+    employees_query = Employee.query.join(Job).filter(Job.date_of_dismissal == "None").order_by(Job.date_of_employment)
 
-    if not employees:
+    if not employees_query:
         abort(404)
-    return dict(employees)
+    else:
+        if request.args.get('division_id'):
+            employees_query = employees_query.filter(
+                Job.division_id == request.args.get('division_id'))
+        elif request.args.get('employment_after_date'):
+            employees_query = employees_query.filter(
+                Job.date_of_employment > request.args.get('employment_after_date'))
+        employees = employees_query.all()
+        print("List of employees: ", employees)

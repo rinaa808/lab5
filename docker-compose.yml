@@ -1,0 +1,22 @@
+version: '3.9'
+
+services:
+
+  postgres:
+
+    env_file: ./docker/.env-postgresql 
+    container_name: postgres_flask_container
+    image: postgres:14
+    volumes:
+      - ./postgres-data/postgres:var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+
+  flask_web:
+
+    container_name: flask_web_container
+    restart: unless-stopped
+    build: .
+    ports:
+      - 5000:5000
